@@ -71,21 +71,32 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.B))
+        //ポーズ画面にする
+        //startボタンかbボタン
+        if (Input.GetKeyDown(KeyCode.B) || Input.GetKeyDown(KeyCode.Joystick1Button9) && GameManager.Instance.GetState()!= GameManager.State.pause) 
         {
             UIManager.Instance.FadeOut();
         }
 
-        if (Input.GetKeyDown(KeyCode.V))
+
+        //ポーズ画面を解除する
+        //xボタンかｖボタン
+        if (Input.GetKeyDown(KeyCode.V) || Input.GetKeyDown(KeyCode.Joystick1Button1) && GameManager.Instance.GetState() == GameManager.State.pause)
         {
             UIManager.Instance.FadeIn();
         }
-        
+
+        //stateがgameかglideじゃなければ操作できないようにする
+        if (GameManager.Instance.GetState() != GameManager.State.Game && GameManager.Instance.GetState() != GameManager.State.Glide)
+        {
+            return;
+        }
+
         //左右方向のキー入力受付
         float move = Input.GetAxis("Horizontal");
 
         //一度移動入力が切れたらジャンプできるようにする
-        if (move < 0.2)
+        if (move < 0.2 && -0.2 < move)
         {
             leafStay = false;
         }
@@ -98,12 +109,12 @@ public class PlayerController : MonoBehaviour
             {
                 if(move < -0.2)
                 {
-                    transform.Translate(-0.86f, 0, 0);
+                    transform.Translate(-2f, 0, 0);
                     this.rigidbody.AddForce(new Vector2(-1, 1) * this.leafJumpPower);
                     leafJump = false;
                 }else if(move > 0.2)
                 {
-                    transform.Translate(0.86f, 0, 0);
+                    transform.Translate(2f, 0, 0);
                     this.rigidbody.AddForce(new Vector2(1, 1) * this.leafJumpPower);
                     leafJump = false;
                 }
@@ -400,7 +411,7 @@ public class PlayerController : MonoBehaviour
         }
 
         //壁登り
-        if (Input.GetKey(KeyCode.W))
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.Joystick1Button5))
         {
             this.rigidbody.velocity = new Vector2(0, this.wallSpeed);
         }
@@ -410,6 +421,7 @@ public class PlayerController : MonoBehaviour
         {
 
             this.isLeave = true;
+            this.wallStay = false;
 
             //左右どちらに飛ぶか
             if (wallPosition.x > transform.position.x)

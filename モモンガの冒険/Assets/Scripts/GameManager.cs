@@ -34,6 +34,7 @@ public class GameManager : MonoBehaviour
         Glide,//滑空中
         Dead,//死んだ演出用
         Clear,//クリア演出用
+        pause,//ポーズ状態用
     }
     State state = State.Ready;//状態を管理する変数
 
@@ -68,6 +69,7 @@ public class GameManager : MonoBehaviour
             case State.Glide: Game(); break;
             case State.Dead:  Dead(); break;
             case State.Clear: Clear(); break;
+            case State.pause: pause();break;
         }
     }
 
@@ -115,6 +117,11 @@ public class GameManager : MonoBehaviour
 
     }
 
+    void pause()
+    {
+
+    }
+
     //stateを切り替える
     public void ChangeState(State next)
     {
@@ -143,6 +150,11 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case State.Clear:
+                {
+                    //stateを切り替えた際に後始末が必要ならばここに記述
+                }
+                break;
+            case State.pause:
                 {
                     //stateを切り替えた際に後始末が必要ならばここに記述
                 }
@@ -180,6 +192,12 @@ public class GameManager : MonoBehaviour
             case State.Clear:
                 {
                     //stateを切り替えた際に初期化が必要ならばここに記述
+                }
+                break;
+            case State.pause:
+                {
+                    //stateを切り替えた際に初期化が必要ならばここに記述
+
                 }
                 break;
         }
