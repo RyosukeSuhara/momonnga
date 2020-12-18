@@ -45,6 +45,7 @@ public class HawkController : MonoBehaviour
     //元の位置に戻り始めて何秒経過したか
     float returnTime = 0;
 
+    Rigidbody2D rigidbody2D;
 
 
     void Start()
@@ -52,6 +53,8 @@ public class HawkController : MonoBehaviour
         ChangeState(State.wait);
 
         GameManager.Instance.AddListener(ReStart);
+
+        this.rigidbody2D = GetComponent<Rigidbody2D>();
     }
 
     // Update is called once per frame
@@ -68,10 +71,18 @@ public class HawkController : MonoBehaviour
         }
     }
 
+    public void HawkStart()
+    {
+        ChangeState(State.appear);
+    }
+
     void Wait()
     {
         transform.position = hawkWaitPosition.transform.position;
-        ChangeState(State.appear);
+        //        ChangeState(State.appear);
+
+        //力が残っていると動作がおかしくなるため、力を一度０にする
+        this.rigidbody2D.velocity = new Vector2(0, 0);
     }
 
     void Appear()
@@ -177,6 +188,9 @@ public class HawkController : MonoBehaviour
                     //タイマーを初期化
                     this.timer = 0;
                     this.returnTime = 0;
+
+                    //モモンガと衝突した際の力が残らないようにする
+                    this.rigidbody2D.velocity = new Vector2(0, 0);
                 }
                 break;
         }
@@ -220,7 +234,11 @@ public class HawkController : MonoBehaviour
     //衝突処理
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        ChangeState(State.back);
+        if (collision.gameObject.tag != "Player")
+        {
+            ChangeState(State.back);
+        }
+        
     }
 
     void ReStart()

@@ -314,7 +314,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.9532511, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -332,7 +332,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "L\u30B9\u30C6\u30A3\u30C3\u30AF\uFF1A\u79FB\u52D5\n\u30B8\u30E3\u30F3\u30D7\uFF1A\u3007\u30DC\u30BF\u30F3\nR1\u30DC\u30BF\u30F3\uFF1A\u58C1\u767B\u308A\nL1\u30DC\u30BF\u30F3\uFF1A\u6ED1\u7A7A\u3001\u6ED1\u7A7A\u89E3\u9664\n"
+  m_Text: "L\u30B9\u30C6\u30A3\u30C3\u30AF\uFF1A\u79FB\u52D5\n\u30B8\u30E3\u30F3\u30D7\uFF1Ax\u30DC\u30BF\u30F3\nL1\u30DC\u30BF\u30F3\uFF1A\u58C1\u767B\u308A\nR1\u30DC\u30BF\u30F3\uFF1A\u6ED1\u7A7A\u3001\u6ED1\u7A7A\u89E3\u9664\n"
 --- !u!222 &1638427758
 CanvasRenderer:
   m_ObjectHideFlags: 0

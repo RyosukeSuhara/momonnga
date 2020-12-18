@@ -16,8 +16,6 @@ public class KinomiController : MonoBehaviour
     //落下開始距離
     int distance = 3;
 
-    float mini = -0.01f;
-
     // Start is called before the first frame update
     void Start()
     {

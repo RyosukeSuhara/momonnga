@@ -14,11 +14,14 @@ public class PauseController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Joystick1Button9))
+        //ステージ選択画面に遷移
+        if (Input.GetKeyDown(KeyCode.Joystick1Button8))
         {
-            if(GameManager.Instance.GetState() == GameManager.State.pause)
+            if(Time.timeScale == 0)
             {
                 UnityEngine.SceneManagement.SceneManager.LoadScene("SelectStageScene");
+
+                Time.timeScale = 1;
             }
         }
     }

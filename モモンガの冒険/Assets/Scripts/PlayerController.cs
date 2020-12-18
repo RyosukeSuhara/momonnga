@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
@@ -23,6 +24,9 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField]
     float leafJumpPower = 1f;//葉っぱジャンプ力
+
+    [SerializeField]
+    float slowingDoun = 0.9f;//プレイヤーの減速率
 
     Rigidbody2D rigidbody;//ジャンプ用
 
@@ -50,6 +54,16 @@ public class PlayerController : MonoBehaviour
 
     bool leafJump = false;//葉っぱジャンプできるか
 
+    bool pause = false;//ポーズ状態かどうか
+
+    float deadline = -6;//画面外に落ちたときの死亡判定のライン
+
+    float editLine = 9;//右または左の画面外に移動できなくなるライン
+
+    float fallSpeed = 4;//やられたときに落ちる速度
+
+    UnityEvent unityEvent = new UnityEvent();
+
 
     //壁に掴まっているかどうか
     enum IsWall
@@ -73,18 +87,37 @@ public class PlayerController : MonoBehaviour
     {
         //ポーズ画面にする
         //startボタンかbボタン
-        if (Input.GetKeyDown(KeyCode.B) || Input.GetKeyDown(KeyCode.Joystick1Button9) && GameManager.Instance.GetState()!= GameManager.State.pause) 
+        if (Input.GetKeyDown(KeyCode.B) || Input.GetKeyDown(KeyCode.Joystick1Button9) && this.pause == false) 
         {
-            UIManager.Instance.FadeOut();
+            //Invokeを使用せずに呼ぶと、2回目以降即ポーズ画面から抜けてしまうバグが起きたため使用している
+            Invoke("latePause", 0.01f);
         }
 
 
         //ポーズ画面を解除する
-        //xボタンかｖボタン
-        if (Input.GetKeyDown(KeyCode.V) || Input.GetKeyDown(KeyCode.Joystick1Button1) && GameManager.Instance.GetState() == GameManager.State.pause)
+        //startボタンかｖボタン
+        if (Input.GetKeyDown(KeyCode.V) || Input.GetKeyDown(KeyCode.Joystick1Button9) && this.pause == true)
         {
+            this.pause = false;
+
             UIManager.Instance.FadeIn();
         }
+       
+        //画面外に落ちたら死亡判定にする
+        if(transform.position.y < this.deadline)
+        {
+            GameManager.Instance.ChangeState(GameManager.State.DeadReaction);
+        }
+        
+
+        //画面外に行かないようにする
+        if(transform.position.x > this.editLine)
+        {
+            transform.position = new Vector2(this.editLine, transform.position.y);
+        }else if(transform.position.x < -this.editLine)
+        {
+            transform.position = new Vector2(-this.editLine, transform.position.y);
+        }  
 
         //stateがgameかglideじゃなければ操作できないようにする
         if (GameManager.Instance.GetState() != GameManager.State.Game && GameManager.Instance.GetState() != GameManager.State.Glide)
@@ -95,54 +128,60 @@ public class PlayerController : MonoBehaviour
         //左右方向のキー入力受付
         float move = Input.GetAxis("Horizontal");
 
-        //一度移動入力が切れたらジャンプできるようにする
-        if (move < 0.2 && -0.2 < move)
+        if(this.rigidbody.velocity.x > 0 && move < 0)
         {
-            leafStay = false;
+            this.rigidbody.velocity *= new Vector2(this.slowingDoun, 1);
+        }else if(this.rigidbody.velocity.x < 0 && move > 0)
+        {
+            this.rigidbody.velocity *= new Vector2(this.slowingDoun, 1);
         }
-        
-        //葉っぱに掴まった直後は移動できない
-        if(this.leafStay == false)
+
+        //移動と葉っぱジャンプ
+        if (leafJump == true)
         {
-            //移動と葉っぱジャンプ
-            if (leafJump == true)
+            //移動ボタンを倒した状態でジャンプボタンを押すと飛ぶ
+            if (move < 0)
             {
-                if(move < -0.2)
+                if (Input.GetKeyDown(KeyCode.Joystick1Button1))
                 {
                     transform.Translate(-2f, 0, 0);
                     this.rigidbody.AddForce(new Vector2(-1, 1) * this.leafJumpPower);
                     leafJump = false;
-                }else if(move > 0.2)
+                }
+            }
+            else if (move > 0)
+            {
+                if (Input.GetKeyDown(KeyCode.Joystick1Button1))
                 {
                     transform.Translate(2f, 0, 0);
                     this.rigidbody.AddForce(new Vector2(1, 1) * this.leafJumpPower);
                     leafJump = false;
                 }
             }
-            else if (wallState == IsWall.not)
+        }
+        else if (wallState == IsWall.not)
+        {
+            transform.Translate(this.speed * move * Time.deltaTime, 0, 0);
+        }
+        else if (wallState == IsWall.right)
+        {
+            if (move > 0)
             {
                 transform.Translate(this.speed * move * Time.deltaTime, 0, 0);
             }
-            else if (wallState == IsWall.right)
+        }
+        else if (wallState == IsWall.left)
+        {
+            if (move < 0)
             {
-                if (move > 0)
-                {
-                    transform.Translate(this.speed * move * Time.deltaTime, 0, 0);
-                }
-            }
-            else if (wallState == IsWall.left)
-            {
-                if (move < 0)
-                {
-                    transform.Translate(this.speed * move * Time.deltaTime, 0, 0);
-                }
+                transform.Translate(this.speed * move * Time.deltaTime, 0, 0);
             }
         }
-        
-        
+
+
 
         //ジャンプ
-        if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button2)) && this.isGround)
+        if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button1)) && this.isGround)
         {
             this.rigidbody.AddForce(transform.up * this.jumpForce);
 
@@ -150,7 +189,7 @@ public class PlayerController : MonoBehaviour
         }
 
         //滑空モードの切り替え
-        if ((Input.GetKeyDown(KeyCode.Z) || Input.GetKeyDown(KeyCode.Joystick1Button4)) && this.isGliding)
+        if ((Input.GetKeyDown(KeyCode.Z) || Input.GetKeyDown(KeyCode.Joystick1Button5)) && this.isGliding)
         {
             //タイマー起動
             if (this.timer == 0)
@@ -233,13 +272,13 @@ public class PlayerController : MonoBehaviour
         //ギミックに触れたら
         if (collision.gameObject.tag == "Gimmick")
         {
-            GameManager.Instance.ChangeState(GameManager.State.Dead);
+            GameManager.Instance.ChangeState(GameManager.State.DeadReaction);
         }
     }
 
 
     //タイマーを満タンに戻す
-    void Fixtimer()
+    public void Fixtimer()
     {
         this.timer = 0;
 
@@ -276,7 +315,6 @@ public class PlayerController : MonoBehaviour
             //落ちないようにする
             this.rigidbody.velocity = new Vector2(0, 0);
 
-            this.leafStay = true;
             this.leafJump = true;
 
             this.isGliding = true;
@@ -291,68 +329,30 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D collision)
     {
-        /*バックアップ用にとっておいてあります
-        if (collision.gameObject.tag == "Wall" && this.isLeave == false)
-        {
-
-            //壁ジャンプ時通常のジャンプが呼び出されることを避けるために一時的にfalseにする
-            this.isGround = false;
-
-            this.isGliding = true;
-
-            this.Gliding = false;
-
-            this.timer = -1;
-
-            //壁に掴まるようにする
-            this.rigidbody.velocity = new Vector2(0, 0);
-
-            //壁との接触位置を取得する
-            Vector2 hitpos = collision.ClosestPoint(transform.position);
-
-            //壁に向かって移動できないようにする
-            if (hitpos.x > transform.position.x)
-            {
-                this.wallState = IsWall.left;
-            }
-            else
-            {
-                this.wallState = IsWall.right;
-            }
-
-            //壁登り
-            if (Input.GetKey(KeyCode.W))
-            {
-                this.rigidbody.velocity = new Vector2(0, this.wallSpeed);
-            }
-
-            //壁ジャンプ
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button2))
-            {
-
-                this.isLeave = true;
-
-                //左右どちらに飛ぶか
-                if(hitpos.x > transform.position.x)
-                {
-
-                    this.rigidbody.AddForce(new Vector2(-1, 1) * this.wallJumpForce,ForceMode2D.Impulse);
-
-                }
-                else if (hitpos.x < transform.position.x)
-                {
-                    
-                    this.rigidbody.AddForce(new Vector2(1, 1) * this.wallJumpForce,ForceMode2D.Impulse);
-                }
-            }
-        }
-        */
 
         //風
         if(collision.gameObject.tag == "Wind")
         {
             if(GameManager.Instance.GetState() == GameManager.State.Glide)
-            this.rigidbody.AddForce(new Vector2(1, 0) * this.windPower);
+            {
+                //風の向きによって力を掛ける方向を変える
+                if((315 < collision.gameObject.transform.rotation.eulerAngles.z && collision.gameObject.transform.rotation.eulerAngles.z <= 360) || 
+                   (0 <= collision.gameObject.transform.rotation.eulerAngles.z && collision.gameObject.transform.rotation.eulerAngles.z < 45))
+                {
+                    this.rigidbody.AddForce(new Vector2(1, 0) * this.windPower * 2);
+                }else if(45 <= collision.gameObject.transform.rotation.eulerAngles.z && collision.gameObject.transform.rotation.eulerAngles.z < 135)
+                {
+                    this.rigidbody.AddForce(new Vector2(0, 1) * this.windPower * 50);
+                }else if(135 <= collision.gameObject.transform.rotation.eulerAngles.z && collision.gameObject.transform.rotation.eulerAngles.z < 225 )
+                {
+                    this.rigidbody.AddForce(new Vector2(-1, 0) * this.windPower * 2);
+                }else if(225 <= collision.gameObject.transform.rotation.eulerAngles.z && collision.gameObject.transform.rotation.eulerAngles.z < 315)
+                {
+                    this.rigidbody.AddForce(new Vector2(0, -1) * this.windPower);
+                }
+                
+            }
+            
         }
 
         //葉っぱ
@@ -388,6 +388,9 @@ public class PlayerController : MonoBehaviour
     //壁に掴まっている時
     void WallStay()
     {
+        //壁登りように上下方向のキー入力受付
+        float updown = Input.GetAxis("Vertical");
+
         //壁ジャンプ時通常のジャンプが呼び出されることを避けるために一時的にfalseにする
         this.isGround = false;
 
@@ -411,13 +414,13 @@ public class PlayerController : MonoBehaviour
         }
 
         //壁登り
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.Joystick1Button5))
+        if (updown > 0 || updown < 0)
         {
-            this.rigidbody.velocity = new Vector2(0, this.wallSpeed);
+            this.rigidbody.velocity = new Vector2(0, this.wallSpeed * updown);
         }
 
         //壁ジャンプ
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button2))
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button1))
         {
 
             this.isLeave = true;
@@ -436,6 +439,56 @@ public class PlayerController : MonoBehaviour
                 this.rigidbody.AddForce(new Vector2(1, 1) * this.wallJumpForce, ForceMode2D.Impulse);
             }
         }
+    }
+
+    //ポーズ
+    void latePause()
+    {
+        this.pause = true;
+
+        UIManager.Instance.FadeOut();
+    }
+
+    //死んだときの挙動
+    public void deadReaction()
+    {
+        Debug.Log("a");
+
+        this.rigidbody.isKinematic = true;
+
+        StartCoroutine("Fall");
+    }
+    
+    //コルーチン
+    IEnumerator Fall()
+    {
+        //やられたとき、一度飛び上がってから落ちていく処理
+        while(transform.position.y > this.deadline -1)
+        {
+            this.rigidbody.velocity = Vector2.zero;
+
+            transform.position += new Vector3(0, fallSpeed * Time.deltaTime, 0);
+
+            this.fallSpeed -= 3f * Time.deltaTime;
+
+            yield return null;
+        }
+        this.rigidbody.isKinematic = false;
+        this.rigidbody.velocity = Vector2.zero;
+
+        this.fallSpeed = 4;
+
+        //コールバック
+        this.unityEvent.Invoke();
+
+        StopCoroutine("Fall");
+
+    }
+
+    //コールバック関数
+    public void AddListener(UnityAction method)
+    {
+        this.unityEvent.AddListener(method);
     }
 }
 

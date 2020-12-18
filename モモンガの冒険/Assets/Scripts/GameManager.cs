@@ -10,7 +10,10 @@ public class GameManager : MonoBehaviour
 
     public GameObject startPosition;
 
+    //プレイヤーの状態管理用の変数
     public GameObject Player;
+    PlayerController playerController;
+    Rigidbody2D rigidbody;
 
     UnityEvent unityEvent = new UnityEvent();
 
@@ -32,9 +35,9 @@ public class GameManager : MonoBehaviour
         Ready,//みんなが動き出せる前の状態（スタート時の演出に利用）
         Game,//ゲーム中
         Glide,//滑空中
-        Dead,//死んだ演出用
+        DeadReaction,//死亡演出用
+        Dead,//死んだ時の処理用
         Clear,//クリア演出用
-        pause,//ポーズ状態用
     }
     State state = State.Ready;//状態を管理する変数
 
@@ -57,6 +60,12 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         ChangeState(State.Ready);
+
+        this.playerController = this.Player.GetComponent<PlayerController>();
+
+        this.rigidbody = this.Player.GetComponent<Rigidbody2D>();
+
+        this.playerController.AddListener(OnDeadReactionEnd);
     }
 
     // Update is called once per frame
@@ -67,9 +76,9 @@ public class GameManager : MonoBehaviour
             case State.Ready: Ready(); break;
             case State.Game:  Game(); break;
             case State.Glide: Game(); break;
+            case State.DeadReaction: DeadReaction();  break;
             case State.Dead:  Dead(); break;
             case State.Clear: Clear(); break;
-            case State.pause: pause();break;
         }
     }
 
@@ -107,17 +116,17 @@ public class GameManager : MonoBehaviour
 
     }
 
+    void DeadReaction()
+    {
+
+    }
+
     void Dead()
     {
 
     }
 
     void Clear()
-    {
-
-    }
-
-    void pause()
     {
 
     }
@@ -144,17 +153,17 @@ public class GameManager : MonoBehaviour
                     //stateを切り替えた際に後始末が必要ならばここに記述
                 }
                 break;
+            case State.DeadReaction:
+                {
+                    //stateを切り替えた際に後始末が必要ならばここに記述
+                }
+                break;
             case State.Dead:
                 {
                     //stateを切り替えた際に後始末が必要ならばここに記述
                 }
                 break;
             case State.Clear:
-                {
-                    //stateを切り替えた際に後始末が必要ならばここに記述
-                }
-                break;
-            case State.pause:
                 {
                     //stateを切り替えた際に後始末が必要ならばここに記述
                 }
@@ -182,22 +191,35 @@ public class GameManager : MonoBehaviour
                     //stateを切り替えた際に初期化が必要ならばここに記述
                 }
                 break;
+            case State.DeadReaction:
+                {
+                    //stateを切り替えた際に初期化が必要ならばここに記述
+
+                    this.playerController.deadReaction();
+                }
+                break;
             case State.Dead:
                 {
                     //stateを切り替えた際に初期化が必要ならばここに記述
+
+                    //プレイヤーをエリアの初期位置に戻す
                     this.Player.transform.position = this.startPosition.transform.position;
+
+                    //コールバック
                     this.unityEvent.Invoke();
+
+                    //滑空ゲージを元に戻す
+                    this.playerController.Fixtimer();
+
+                    //プレイヤーにかかっている力を０にする
+
+                    //状態をゲームに戻す
+                    ChangeState(State.Game);
                 }
                 break;
             case State.Clear:
                 {
                     //stateを切り替えた際に初期化が必要ならばここに記述
-                }
-                break;
-            case State.pause:
-                {
-                    //stateを切り替えた際に初期化が必要ならばここに記述
-
                 }
                 break;
         }
@@ -206,5 +228,11 @@ public class GameManager : MonoBehaviour
     public void AddListener(UnityAction method)
     {
         this.unityEvent.AddListener(method);
+    }
+
+    public void OnDeadReactionEnd()
+    {
+
+        ChangeState(State.Dead);
     }
 }

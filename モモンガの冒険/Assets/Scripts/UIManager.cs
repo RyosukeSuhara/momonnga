@@ -48,7 +48,9 @@ public class UIManager : MonoBehaviour
 
         this.transitionUIController.FadeOut();
 
-        GameManager.Instance.ChangeState(GameManager.State.pause);
+        Time.timeScale = 0;
+
+        //GameManager.Instance.ChangeState(GameManager.State.pause);
     }
 
     public void FadeIn()
@@ -57,6 +59,8 @@ public class UIManager : MonoBehaviour
 
         this.transitionUIController.FadeIn();
 
-        GameManager.Instance.ChangeState(GameManager.State.Game);
+        Time.timeScale = 1;
+
+        //GameManager.Instance.ChangeState(GameManager.State.Game);
     }
 }
